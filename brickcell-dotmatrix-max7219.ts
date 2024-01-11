@@ -106,9 +106,9 @@ namespace Brickcell {
     /**
     * Setup/reset MAX7219s. If you are using 4-in-1 module you'll need to set rotation as true. If your chain are consisted of single modules set it as false (default).
     */
-    //% block="Setup MAX7219:|Number of matrixs $num|CS(LOAD) = $cs|MOSI(DIN) = $mosi|MISO(not used) = $miso|SCK(CLK) = $sck"
+    //% block="Setup MAX7219:|Number of matrixs $num|MOSI(DIN) = $mosi|SCK(CLK) = $sck|CS(LOAD) = $cs|MISO(not used) = $miso"
     //% num.min=1 num.defl=1 cs.defl=DigitalPin.P16 mosi.defl=DigitalPin.P15 miso.defl=DigitalPin.P14 sck.defl=DigitalPin.P13 rotate.defl=false group="1. Setup"
-    export function setup(num: number, cs: DigitalPin, mosi: DigitalPin, miso: DigitalPin, sck: DigitalPin) {
+    export function setup(num: number, mosi: DigitalPin, sck: DigitalPin, cs: DigitalPin, miso: DigitalPin) {
         // set internal variables        
         _pinCS = cs
         _matrixNum = num

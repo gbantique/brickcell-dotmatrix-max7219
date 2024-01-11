@@ -1,9 +1,9 @@
 Brickcell.setup(
     4,
-    DigitalPin.P16,
     DigitalPin.P15,
     DigitalPin.P14,
-    DigitalPin.P13
+    DigitalPin.P13,
+    DigitalPin.P16
 )
 basic.forever(function () {
     Brickcell.scrollText(
