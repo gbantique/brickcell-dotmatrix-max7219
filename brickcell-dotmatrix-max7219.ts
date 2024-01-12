@@ -155,10 +155,12 @@ namespace Brickcell {
 
 
     /**
-    * Setup/reset MAX7219s. If you are using 4-in-1 module you'll need to set rotation as true. If your chain are consisted of single modules set it as false (default).
+    * Setup/reset MAX7219s. 
+    * If you are using 4-in-1 module you'll need to set rotation as true. If your chain are consisted of single modules set it as false (default).
     */
     //% block="%max7219 Setup MAX7219:|Number of matrixs $num|MOSI(DIN) = $mosi|SCK(CLK) = $sck|CS(LOAD) = $cs|MISO(not used) = $miso"
-    //% num.min=1 num.defl=1 cs.defl=DigitalPin.P16 mosi.defl=DigitalPin.P15 miso.defl=DigitalPin.P14 sck.defl=DigitalPin.P13 rotate.defl=false
+    //% blockId="MAX7219_setup"
+    //% num.min=1 num.defl=1 mosi.defl=DigitalPin.P15 sck.defl=DigitalPin.P14 cs.defl=DigitalPin.P13  miso.defl=DigitalPin.P16 rotate.defl=false
     //% group="1. Setup"
     //% subcategory="dotmatrix_max7219"
     public setup(num: number, mosi: DigitalPin, sck: DigitalPin, cs: DigitalPin, miso: DigitalPin) {
@@ -185,6 +187,7 @@ namespace Brickcell {
     * Rotation/reverse order options for 4-in-1 MAX7219 modules
     */
     //% block="%max7219 Rotate matrix display $rotation|Reverse printing order $reversed" rotation.defl=rotation_direction.none
+    //% blockId="MAX7219_rotate"
     //% group="1. Setup" blockExternalInputs=true advanced=true
     //% subcategory="dotmatrix_max7219"
     public for_4_in_1_modules(rotation: rotation_direction, reversed: boolean) {
@@ -279,6 +282,7 @@ namespace Brickcell {
     * Scroll a text accross all MAX7219 matrixs for once
     */
     //% block="%max7219 Scroll text $text|delay (ms) $delay|at the end wait (ms) $endDelay" text.defl="Hello world!" delay.min=0 delay.defl=75 endDelay.min=0 endDelay.defl=500
+    //% blockId="MAX7219_scrollText"
     //% group="2. Display text on matrixs" blockExternalInputs=true
     //% subcategory="dotmatrix_max7219"
     public scrollText(text: string, delay: number, endDelay: number) {
@@ -347,6 +351,7 @@ namespace Brickcell {
     * Print a text accross the chain of MAX7219 matrixs at a specific spot. Offset value -8 ~ last column of matrixs. You can choose to clear the screen or not (if not it can be used to print multiple string on the MAX7219 chain).
     */
     //% block="%max7219 Display text (align left) $text|offset $offset|clear screen first $clear" text.defl="Hi!" offset.min=-8 clear.defl=true
+    //% blockId="MAX7219_displayText"
     //% group="2. Display text on matrixs" blockExternalInputs=true
     //% subcategory="dotmatrix_max7219"
     public displayText(text: string, offset: number, clear: boolean) {
@@ -398,6 +403,7 @@ namespace Brickcell {
     * Print a text on the chain of MAX7219 matrixs and automatically align to the right.
     */
     //% block="%max7219 Display text (align right) $text|clear screen first $clear" text.defl="Hi!" clear.defl=true
+    //% blockId="MAX7219_displayTextAlignRight"
     //% group="2. Display text on matrixs" blockExternalInputs=true
     //% subcategory="dotmatrix_max7219"
     public displayTextAlignRight(text: string, clear: boolean) {
@@ -413,6 +419,7 @@ namespace Brickcell {
     * Print a custom character from a number array on the chain of MAX7219 matrixs at a specific spot. Each number in the array is 0-255, the decimal version of column's byte number. Offset value -8 ~ last column of matrixs. You can choose to clear the screen or not (if not it can be used to print multiple string on the MAX7219 chain).
     */
     //% block="%max7219 Display custom character from|number array $customCharArray|offset $offset|clear screen first $clear" offset.min=-8 clear.defl=true
+    //% blockId="MAX7219_displayCustomCharacter"
     //% group="2. Display text on matrixs" blockExternalInputs=true advanced=true
     //% subcategory="dotmatrix_max7219"
     public displayCustomCharacter(customCharArray: number[], offset: number, clear: boolean) {
@@ -451,6 +458,7 @@ namespace Brickcell {
     * Return a number array calculated from a 8x8 LED byte array (example: B00100000,B01000000,B10000110,B10000000,B10000000,B10000110,B01000000,B00100000)
     */
     //% block="%max7219 Get custom character number array|from byte-array string $text" text.defl="B00100000,B01000000,B10000110,B10000000,B10000000,B10000110,B01000000,B00100000"
+    //% blockId="MAX7219_getCustomCharacterArray"
     //% group="2. Display text on matrixs" blockExternalInputs=true advanced=true
     //% subcategory="dotmatrix_max7219"
     public getCustomCharacterArray(text: string) {
@@ -491,6 +499,7 @@ namespace Brickcell {
     * Each number in the array is 0-255, the decimal version of column's byte number.
     */
     //% block="%max7219 Add custom character $chr|number array $customCharArray|to the extension font library"
+    //% blockId="MAX7219_addCustomChr"
     //% chr.defl=""
     //% blockExternalInputs=true
     //% group="2. Display text on matrixs"
@@ -508,6 +517,7 @@ namespace Brickcell {
     * Display all fonts in the extension font library
     */
     //% block="%max7219 Display all fonts at delay $delay" delay.min=0 delay.defl=200
+    //% blockId="MAX7219_fontDemo"
     //% group="2. Display text on matrixs" advanced=true
     //% subcategory="dotmatrix_max7219"
     public fontDemo(delay: number) {
@@ -532,6 +542,7 @@ namespace Brickcell {
     * Turn on or off all MAX7219s
     */
     //% block="%max7219 Turn on all matrixs $status" status.defl=true
+    //% blockId="MAX7219_togglePower"
     //% group="3. Basic light control" advanced=true
     //% subcategory="dotmatrix_max7219"
     public togglePower(status: boolean) {
@@ -543,6 +554,7 @@ namespace Brickcell {
     * Set brightness level of LEDs on all MAX7219s
     */
     //% block="%max7219 Set all brightness level $level" level.min=0 level.max=15 level.defl=15
+    //% blockId="MAX7219_brightnessAll"
     //% group="3. Basic light control"
     //% subcategory="dotmatrix_max7219"
     public brightnessAll(level: number) {
@@ -553,6 +565,7 @@ namespace Brickcell {
     * Set brightness level of LEDs on a specific MAX7219s (index 0=farthest on the chain)
     */
     //% block="%max7219 Set brightness level $level on matrix index = $index" level.min=0 level.max=15 level.defl=15 index.min=0
+    //% blockId="MAX7219_brightnessForOne"
     //% group="3. Basic light control" advanced=true
     //% subcategory="dotmatrix_max7219"
     public brightnessForOne(level: number, index: number) {
@@ -563,6 +576,7 @@ namespace Brickcell {
     * Turn on all LEDs on all MAX7219s
     */
     //% block="%max7219 Fill all LEDs"
+    //% blockId="MAX7219_fillAll"
     //% group="3. Basic light control"
     //% subcategory="dotmatrix_max7219"
     public fillAll() {
@@ -573,6 +587,7 @@ namespace Brickcell {
     * Turn on LEDs on a specific MAX7219
     */
     //% block="%max7219 Fill LEDs on matrix index = $index" index.min=0
+    //% blockId="MAX7219_fillForOne"
     //% group="3. Basic light control" advanced=true
     //% subcategory="dotmatrix_max7219"
     public fillForOne(index: number) {
@@ -583,6 +598,7 @@ namespace Brickcell {
     * Turn off LEDs on all MAX7219s
     */
     //% block="%max7219 Clear all LEDs"
+    //% blockId="MAX7219_clearAll"
     //% group="3. Basic light control"
     //% subcategory="dotmatrix_max7219"
     public clearAll() {
@@ -593,6 +609,7 @@ namespace Brickcell {
     * Turn off LEDs on a specific MAX7219 (index 0=farthest on the chain)
     */
     //% block="%max7219 Clear LEDs on matrix index = $index" index.min=0
+    //% blockId="MAX7219_clearForOne"
     //% group="3. Basic light control" advanced=true
     //% subcategory="dotmatrix_max7219"
     public clearForOne(index: number) {
@@ -603,6 +620,7 @@ namespace Brickcell {
     * Turn on LEDs randomly on all MAX7219s
     */
     //% block="%max7219 Randomize all LEDs" index.min=0
+    //% blockId="MAX7219_randomizeAll"
     //% group="3. Basic light control"
     //% subcategory="dotmatrix_max7219"
     public randomizeAll() {
@@ -613,6 +631,7 @@ namespace Brickcell {
     * Turn on LEDs randomly on a specific MAX7219 (index 0=farthest on the chain)
     */
     //% block="%max7219 Randomize LEDs on matrix index = $index" index.min=0
+    //% blockId="MAX7219_randomizeForOne"
     //% group="3. Basic light control" advanced=true
     //% subcategory="dotmatrix_max7219"
     public randomizeForOne(index: number) {
@@ -623,6 +642,7 @@ namespace Brickcell {
     * Set LEDs of all MAX7219s to a pattern from a 8x8 matrix variable (index 0=farthest on the chain)
     */
     //% block="%max7219 Display 8x8 pattern $newMatrix on all matrixs"
+    //% blockId="MAX7219_displayLEDsToAll"
     //% group="4. Set custom LED pattern on matrixs" advanced=true
     //% subcategory="dotmatrix_max7219"
     public displayLEDsToAll(newMatrix: number[][]) {
@@ -648,6 +668,7 @@ namespace Brickcell {
     * Set LEDs of a specific MAX7219s to a pattern from a 8x8 number matrix variable (index 0=farthest on the chain)
     */
     //% block="%max7219 Display 8x8 pattern $newMatrix|on matrix index = $index" index.min=0 blockExternalInputs=true
+    //% blockId="MAX7219_displayLEDsForOne"
     //% group="4. Set custom LED pattern on matrixs"
     //% subcategory="dotmatrix_max7219"
     public displayLEDsForOne(newMatrix: number[][], index: number) {
@@ -673,6 +694,7 @@ namespace Brickcell {
     * Return a empty 8x8 number matrix variable
     */
     //% block="%max7219 Empty 8x8 pattern"
+    //% blockId="MAX7219_getEmptyMatrix"
     //% group="4. Set custom LED pattern on matrixs"
     //% subcategory="dotmatrix_max7219"
     public getEmptyMatrix() {
@@ -692,6 +714,7 @@ namespace Brickcell {
     * Return a full 8x8 number matrix variable
     */
     //% block="%max7219 Full 8x8 pattern"
+    //% blockId="MAX7219_getFullMatrix"
     //% group="4. Set custom LED pattern on matrixs" advanced=true
     //% subcategory="dotmatrix_max7219"
     public getFullMatrix() {
@@ -711,6 +734,7 @@ namespace Brickcell {
     * Return a specific value from a 8x8 number matrix variable
     */
     //% block="%max7219 Get value from 8x8 pattern %matrix|x = $x y = $y" x.min=0 x.max=7 y.min=0 y.max=7
+    //% blockId="MAX7219_getValueFromMatrix"
     //% group="4. Set custom LED pattern on matrixs" blockExternalInputs=true advanced=true
     //% subcategory="dotmatrix_max7219"
     public getValueFromMatrix(matrix: number[][], x: number, y: number) {
@@ -721,6 +745,7 @@ namespace Brickcell {
     * Set a specific value in a 8x8 number matrix variable
     */
     //% block="%max7219 Set 8x8 pattern %matrix|x = $x y = $y value to $value" value.min=0 value.max=1 x.min=0 x.max=7 y.min=0 y.max=7 
+    //% blockId="MAX7219_setValueInMatrix"
     //% group="4. Set custom LED pattern on matrixs" blockExternalInputs=true
     //% subcategory="dotmatrix_max7219"
     public setValueInMatrix(matrix: number[][], x: number, y: number, value: number) {
@@ -731,6 +756,7 @@ namespace Brickcell {
     * Toggle (between 0/1) a specific value in a 8x8 number matrix variable
     */
     //% block="%max7219 Toogle value in 8x8 pattern %matrix|x = $x y = $y" x.min=0 x.max=7 y.min=0 y.max=7
+    //% blockId="MAX7219_toggleValueInMatrix"
     //% group="4. Set custom LED pattern on matrixs" blockExternalInputs=true advanced=true
     //% subcategory="dotmatrix_max7219"
     public toogleValueInMatrix(matrix: number[][], x: number, y: number) {
