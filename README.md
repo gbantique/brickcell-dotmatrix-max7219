@@ -26,3 +26,11 @@ To edit this repository in MakeCode.
 ## Credit
 I would like to express my appreciation to the original author of this extension for sharing it to the public
 [https://github.com/alankrantas/pxt-MAX7219_8x8/](https://github.com/alankrantas/pxt-MAX7219_8x8.git/)
+
+### Changelog:
+1. Change namespace to use Brickcell
+2. Modified to use class.
+3. Combined setup functions.
+4. Added subcategory "dotmatrix_max7219" and "more dotmatrix_max7219".
+5. Modified pin assignment default.
+6. etc...
