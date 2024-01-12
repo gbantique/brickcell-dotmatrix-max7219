@@ -3,136 +3,155 @@
  * by Alan Wang
  */
 
-//% weight=100 color=#006d19 icon="\uf00a" block="MAX7219 8x8"
+/**
+ * Brickcell Development Kit
+ */
+//% color="#FFBF00" icon="\uf12e" weight=70
 namespace Brickcell {
+    /**
+     * MAX7219 8x8 Dot Matrix Display
+     */
+  export class MAX7219 {
+    private _NOOP: number;        // no-op (do nothing, doesn't change current status)
+    private _DIGIT: number[];     // digit (LED column)
+    private _DECODEMODE: number;  // decode mode (1=on, 0-off; for 7-segment display on MAX7219, no usage here)
+    private _INTENSITY: number;   // intensity (LED brightness level, 0-15)
+    private _SCANLIMIT: number;   // scan limit (number of scanned digits)
+    private _SHUTDOWN: number;    // turn on (1) or off (0)
+    private _DISPLAYTEST: number; // force all LEDs light up, no usage here
 
-  /* export class MAX7219 { */
-
-    //Registers (command) for MAX7219
-    const _NOOP = 0 // no-op (do nothing, doesn't change current status)
-    const _DIGIT = [1, 2, 3, 4, 5, 6, 7, 8] // digit (LED column)
-    const _DECODEMODE = 9 // decode mode (1=on, 0-off; for 7-segment display on MAX7219, no usage here)
-    const _INTENSITY = 10 // intensity (LED brightness level, 0-15)
-    const _SCANLIMIT = 11 // scan limit (number of scanned digits)
-    const _SHUTDOWN = 12 // turn on (1) or off (0)
-    const _DISPLAYTEST = 15 // force all LEDs light up, no usage here
-
-    let _pinCS = DigitalPin.P16 // LOAD pin, 0=ready to receive command, 1=command take effect
-    let _matrixNum = 1 // number of MAX7219 matrix linked in the chain
-    let _displayArray: number[] = [] // display array to show accross all matrixs
-    let _rotation = 0 // rotate matrixs display for 4-in-1 modules
-    let _reversed = false // reverse matrixs display order for 4-in-1 modules
+    private _pinCS = DigitalPin;      // LOAD pin, 0=ready to receive command, 1=command take effect
+    private _matrixNum: number;       // number of MAX7219 matrix linked in the chain
+    private _displayArray: number[];  // display array to show accross all matrixs
+    private _rotation: number;        // rotate matrixs display for 4-in-1 modules
+    private _reversed: boolean;       // reverse matrixs display order for 4-in-1 modules
 
     // ASCII fonts borrowed from https://github.com/lyle/matrix-led-font/blob/master/src/index.js
+    private font: string[];
+    private font_matrix: number[][];
+ 
+    constructor() {
+      this._NOOP = 0;
+      this._DIGIT = [1, 2, 3, 4, 5, 6, 7, 8];
+      this._DECODEMODE = 9;
+      this._INTENSITY = 10;
+      this._SCANLIMIT = 11;
+      this._SHUTDOWN = 12;
+      this._DISPLAYTEST = 15;
 
-    let font = [" ", "!", "\"", "#", "$", "%", "&", "\'", "(", ")",
-        "*", "+", ",", "-", ".", "/",
-        "0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
-        ":", ";", "<", "=", ">", "?", "@",
-        "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L",
-        "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z",
-        "[", "\\", "]", "_", "`",
-        "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l",
-        "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z",
-        "{", "|", "}", "~", "^"]
+      this._pinCS = DigitalPin.P16;
+      this._matrixNum = 1;
+      this._displayArray: number[] = [];
+      this._rotation = 0;
+      this._reversed = false;
 
-    let font_matrix = [
-        [0b00000000, 0b00000000, 0b00000000, 0b00000000],
-        [0b01011111, 0b00000000],
-        [0b00000011, 0b00000000, 0b00000011, 0b00000000],
-        [0b00010100, 0b00111110, 0b00010100, 0b00111110, 0b00010100, 0b00000000],
-        [0b00100100, 0b01101010, 0b00101011, 0b00010010, 0b00000000],
-        [0b01100011, 0b00010011, 0b00001000, 0b01100100, 0b01100011, 0b00000000],
-        [0b00110110, 0b01001001, 0b01010110, 0b00100000, 0b01010000, 0b00000000],
-        [0b00000011, 0b00000000],
-        [0b00011100, 0b00100010, 0b01000001, 0b00000000],
-        [0b01000001, 0b00100010, 0b00011100, 0b00000000],
-        [0b00101000, 0b00011000, 0b00001110, 0b00011000, 0b00101000, 0b00000000],
-        [0b00001000, 0b00001000, 0b00111110, 0b00001000, 0b00001000, 0b00000000],
-        [0b10110000, 0b01110000, 0b00000000],
-        [0b00001000, 0b00001000, 0b00001000],
-        [0b01100000, 0b01100000, 0b00000000],
-        [0b01100000, 0b00011000, 0b00000110, 0b00000001, 0b00000000],
-        [0b00111110, 0b01000001, 0b01000001, 0b00111110, 0b00000000],
-        [0b01000010, 0b01111111, 0b01000000, 0b00000000],
-        [0b01100010, 0b01010001, 0b01001001, 0b01000110, 0b00000000],
-        [0b00100010, 0b01000001, 0b01001001, 0b00110110, 0b00000000],
-        [0b00011000, 0b00010100, 0b00010010, 0b01111111, 0b00000000],
-        [0b00100111, 0b01000101, 0b01000101, 0b00111001, 0b00000000],
-        [0b00111110, 0b01001001, 0b01001001, 0b00110000, 0b00000000],
-        [0b01100001, 0b00010001, 0b00001001, 0b00000111, 0b00000000],
-        [0b00110110, 0b01001001, 0b01001001, 0b00110110, 0b00000000],
-        [0b00000110, 0b01001001, 0b01001001, 0b00111110, 0b00000000],
-        [0b00010100, 0b00000000],
-        [0b00100000, 0b00010100, 0b00000000],
-        [0b00001000, 0b00010100, 0b00100010, 0b00000000],
-        [0b00010100, 0b00010100, 0b00010100, 0b00000000],
-        [0b00100010, 0b00010100, 0b00001000, 0b00000000],
-        [0b00000010, 0b01011001, 0b00001001, 0b00000110, 0b00000000],
-        [0b00111110, 0b01001001, 0b01010101, 0b01011101, 0b00001110, 0b00000000],
-        [0b01111110, 0b00010001, 0b00010001, 0b01111110, 0b00000000],
-        [0b01111111, 0b01001001, 0b01001001, 0b00110110, 0b00000000],
-        [0b00111110, 0b01000001, 0b01000001, 0b00100010, 0b00000000],
-        [0b01111111, 0b01000001, 0b01000001, 0b00111110, 0b00000000],
-        [0b01111111, 0b01001001, 0b01001001, 0b01000001, 0b00000000],
-        [0b01111111, 0b00001001, 0b00001001, 0b00000001, 0b00000000],
-        [0b00111110, 0b01000001, 0b01001001, 0b01111010, 0b00000000],
-        [0b01111111, 0b00001000, 0b00001000, 0b01111111, 0b00000000],
-        [0b01000001, 0b01111111, 0b01000001, 0b00000000],
-        [0b00110000, 0b01000000, 0b01000001, 0b00111111, 0b00000000],
-        [0b01111111, 0b00001000, 0b00010100, 0b01100011, 0b00000000],
-        [0b01111111, 0b01000000, 0b01000000, 0b01000000, 0b00000000],
-        [0b01111111, 0b00000010, 0b00001100, 0b00000010, 0b01111111, 0b00000000],
-        [0b01111111, 0b00000100, 0b00001000, 0b00010000, 0b01111111, 0b00000000],
-        [0b00111110, 0b01000001, 0b01000001, 0b00111110, 0b00000000],
-        [0b01111111, 0b00001001, 0b00001001, 0b00000110, 0b00000000],
-        [0b00111110, 0b01000001, 0b01000001, 0b10111110, 0b00000000],
-        [0b01111111, 0b00001001, 0b00001001, 0b01110110, 0b00000000],
-        [0b01000110, 0b01001001, 0b01001001, 0b00110010, 0b00000000],
-        [0b00000001, 0b00000001, 0b01111111, 0b00000001, 0b00000001, 0b00000000],
-        [0b00111111, 0b01000000, 0b01000000, 0b00111111, 0b00000000],
-        [0b00001111, 0b00110000, 0b01000000, 0b00110000, 0b00001111, 0b00000000],
-        [0b00111111, 0b01000000, 0b00111000, 0b01000000, 0b00111111, 0b00000000],
-        [0b01100011, 0b00010100, 0b00001000, 0b00010100, 0b01100011, 0b00000000],
-        [0b00000111, 0b00001000, 0b01110000, 0b00001000, 0b00000111, 0b00000000],
-        [0b01100001, 0b01010001, 0b01001001, 0b01000111, 0b00000000],
-        [0b01111111, 0b01000001, 0b00000000],
-        [0b00000001, 0b00000110, 0b00011000, 0b01100000, 0b00000000],
-        [0b01000001, 0b01111111, 0b00000000],
-        [0b01000000, 0b01000000, 0b01000000, 0b01000000, 0b00000000],
-        [0b00000001, 0b00000010, 0b00000000],
-        [0b00100000, 0b01010100, 0b01010100, 0b01111000, 0b00000000],
-        [0b01111111, 0b01000100, 0b01000100, 0b00111000, 0b00000000],
-        [0b00111000, 0b01000100, 0b01000100, 0b00101000, 0b00000000],
-        [0b00111000, 0b01000100, 0b01000100, 0b01111111, 0b00000000],
-        [0b00111000, 0b01010100, 0b01010100, 0b00011000, 0b00000000],
-        [0b00000100, 0b01111110, 0b00000101, 0b00000000],
-        [0b10011000, 0b10100100, 0b10100100, 0b01111000, 0b00000000],
-        [0b01111111, 0b00000100, 0b00000100, 0b01111000, 0b00000000],
-        [0b01000100, 0b01111101, 0b01000000, 0b00000000],
-        [0b01000000, 0b10000000, 0b10000100, 0b01111101, 0b00000000],
-        [0b01111111, 0b00010000, 0b00101000, 0b01000100, 0b00000000],
-        [0b01000001, 0b01111111, 0b01000000, 0b00000000],
-        [0b01111100, 0b00000100, 0b01111100, 0b00000100, 0b01111000, 0b00000000],
-        [0b01111100, 0b00000100, 0b00000100, 0b01111000, 0b00000000],
-        [0b00111000, 0b01000100, 0b01000100, 0b00111000, 0b00000000],
-        [0b11111100, 0b00100100, 0b00100100, 0b00011000, 0b00000000],
-        [0b00011000, 0b00100100, 0b00100100, 0b11111100, 0b00000000],
-        [0b01111100, 0b00001000, 0b00000100, 0b00000100, 0b00000000],
-        [0b01001000, 0b01010100, 0b01010100, 0b00100100, 0b00000000],
-        [0b00000100, 0b00111111, 0b01000100, 0b00000000],
-        [0b00111100, 0b01000000, 0b01000000, 0b01111100, 0b00000000],
-        [0b00011100, 0b00100000, 0b01000000, 0b00100000, 0b00011100, 0b00000000],
-        [0b00111100, 0b01000000, 0b00111100, 0b01000000, 0b00111100, 0b00000000],
-        [0b01000100, 0b00101000, 0b00010000, 0b00101000, 0b01000100, 0b00000000],
-        [0b10011100, 0b10100000, 0b10100000, 0b01111100, 0b00000000],
-        [0b01100100, 0b01010100, 0b01001100, 0b00000000],
-        [0b00001000, 0b00110110, 0b01000001, 0b00000000],
-        [0b01111111, 0b00000000],
-        [0b01000001, 0b00110110, 0b00001000, 0b00000000],
-        [0b00001000, 0b00000100, 0b00001000, 0b00000100, 0b00000000],
-        [0b00000010, 0b00000001, 0b00000010, 0b00000000]]
-
+      this.font = [" ", "!", "\"", "#", "$", "%", "&", "\'", "(", ")",
+          "*", "+", ",", "-", ".", "/",
+          "0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
+          ":", ";", "<", "=", ">", "?", "@",
+          "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L",
+          "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z",
+          "[", "\\", "]", "_", "`",
+          "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l",
+          "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z",
+          "{", "|", "}", "~", "^"];
+      this.font_matrix = [
+          [0b00000000, 0b00000000, 0b00000000, 0b00000000],
+          [0b01011111, 0b00000000],
+          [0b00000011, 0b00000000, 0b00000011, 0b00000000],
+          [0b00010100, 0b00111110, 0b00010100, 0b00111110, 0b00010100, 0b00000000],
+          [0b00100100, 0b01101010, 0b00101011, 0b00010010, 0b00000000],
+          [0b01100011, 0b00010011, 0b00001000, 0b01100100, 0b01100011, 0b00000000],
+          [0b00110110, 0b01001001, 0b01010110, 0b00100000, 0b01010000, 0b00000000],
+          [0b00000011, 0b00000000],
+          [0b00011100, 0b00100010, 0b01000001, 0b00000000],
+          [0b01000001, 0b00100010, 0b00011100, 0b00000000],
+          [0b00101000, 0b00011000, 0b00001110, 0b00011000, 0b00101000, 0b00000000],
+          [0b00001000, 0b00001000, 0b00111110, 0b00001000, 0b00001000, 0b00000000],
+          [0b10110000, 0b01110000, 0b00000000],
+          [0b00001000, 0b00001000, 0b00001000],
+          [0b01100000, 0b01100000, 0b00000000],
+          [0b01100000, 0b00011000, 0b00000110, 0b00000001, 0b00000000],
+          [0b00111110, 0b01000001, 0b01000001, 0b00111110, 0b00000000],
+          [0b01000010, 0b01111111, 0b01000000, 0b00000000],
+          [0b01100010, 0b01010001, 0b01001001, 0b01000110, 0b00000000],
+          [0b00100010, 0b01000001, 0b01001001, 0b00110110, 0b00000000],
+          [0b00011000, 0b00010100, 0b00010010, 0b01111111, 0b00000000],
+          [0b00100111, 0b01000101, 0b01000101, 0b00111001, 0b00000000],
+          [0b00111110, 0b01001001, 0b01001001, 0b00110000, 0b00000000],
+          [0b01100001, 0b00010001, 0b00001001, 0b00000111, 0b00000000],
+          [0b00110110, 0b01001001, 0b01001001, 0b00110110, 0b00000000],
+          [0b00000110, 0b01001001, 0b01001001, 0b00111110, 0b00000000],
+          [0b00010100, 0b00000000],
+          [0b00100000, 0b00010100, 0b00000000],
+          [0b00001000, 0b00010100, 0b00100010, 0b00000000],
+          [0b00010100, 0b00010100, 0b00010100, 0b00000000],
+          [0b00100010, 0b00010100, 0b00001000, 0b00000000],
+          [0b00000010, 0b01011001, 0b00001001, 0b00000110, 0b00000000],
+          [0b00111110, 0b01001001, 0b01010101, 0b01011101, 0b00001110, 0b00000000],
+          [0b01111110, 0b00010001, 0b00010001, 0b01111110, 0b00000000],
+          [0b01111111, 0b01001001, 0b01001001, 0b00110110, 0b00000000],
+          [0b00111110, 0b01000001, 0b01000001, 0b00100010, 0b00000000],
+          [0b01111111, 0b01000001, 0b01000001, 0b00111110, 0b00000000],
+          [0b01111111, 0b01001001, 0b01001001, 0b01000001, 0b00000000],
+          [0b01111111, 0b00001001, 0b00001001, 0b00000001, 0b00000000],
+          [0b00111110, 0b01000001, 0b01001001, 0b01111010, 0b00000000],
+          [0b01111111, 0b00001000, 0b00001000, 0b01111111, 0b00000000],
+          [0b01000001, 0b01111111, 0b01000001, 0b00000000],
+          [0b00110000, 0b01000000, 0b01000001, 0b00111111, 0b00000000],
+          [0b01111111, 0b00001000, 0b00010100, 0b01100011, 0b00000000],
+          [0b01111111, 0b01000000, 0b01000000, 0b01000000, 0b00000000],
+          [0b01111111, 0b00000010, 0b00001100, 0b00000010, 0b01111111, 0b00000000],
+          [0b01111111, 0b00000100, 0b00001000, 0b00010000, 0b01111111, 0b00000000],
+          [0b00111110, 0b01000001, 0b01000001, 0b00111110, 0b00000000],
+          [0b01111111, 0b00001001, 0b00001001, 0b00000110, 0b00000000],
+          [0b00111110, 0b01000001, 0b01000001, 0b10111110, 0b00000000],
+          [0b01111111, 0b00001001, 0b00001001, 0b01110110, 0b00000000],
+          [0b01000110, 0b01001001, 0b01001001, 0b00110010, 0b00000000],
+          [0b00000001, 0b00000001, 0b01111111, 0b00000001, 0b00000001, 0b00000000],
+          [0b00111111, 0b01000000, 0b01000000, 0b00111111, 0b00000000],
+          [0b00001111, 0b00110000, 0b01000000, 0b00110000, 0b00001111, 0b00000000],
+          [0b00111111, 0b01000000, 0b00111000, 0b01000000, 0b00111111, 0b00000000],
+          [0b01100011, 0b00010100, 0b00001000, 0b00010100, 0b01100011, 0b00000000],
+          [0b00000111, 0b00001000, 0b01110000, 0b00001000, 0b00000111, 0b00000000],
+          [0b01100001, 0b01010001, 0b01001001, 0b01000111, 0b00000000],
+          [0b01111111, 0b01000001, 0b00000000],
+          [0b00000001, 0b00000110, 0b00011000, 0b01100000, 0b00000000],
+          [0b01000001, 0b01111111, 0b00000000],
+          [0b01000000, 0b01000000, 0b01000000, 0b01000000, 0b00000000],
+          [0b00000001, 0b00000010, 0b00000000],
+          [0b00100000, 0b01010100, 0b01010100, 0b01111000, 0b00000000],
+          [0b01111111, 0b01000100, 0b01000100, 0b00111000, 0b00000000],
+          [0b00111000, 0b01000100, 0b01000100, 0b00101000, 0b00000000],
+          [0b00111000, 0b01000100, 0b01000100, 0b01111111, 0b00000000],
+          [0b00111000, 0b01010100, 0b01010100, 0b00011000, 0b00000000],
+          [0b00000100, 0b01111110, 0b00000101, 0b00000000],
+          [0b10011000, 0b10100100, 0b10100100, 0b01111000, 0b00000000],
+          [0b01111111, 0b00000100, 0b00000100, 0b01111000, 0b00000000],
+          [0b01000100, 0b01111101, 0b01000000, 0b00000000],
+          [0b01000000, 0b10000000, 0b10000100, 0b01111101, 0b00000000],
+          [0b01111111, 0b00010000, 0b00101000, 0b01000100, 0b00000000],
+          [0b01000001, 0b01111111, 0b01000000, 0b00000000],
+          [0b01111100, 0b00000100, 0b01111100, 0b00000100, 0b01111000, 0b00000000],
+          [0b01111100, 0b00000100, 0b00000100, 0b01111000, 0b00000000],
+          [0b00111000, 0b01000100, 0b01000100, 0b00111000, 0b00000000],
+          [0b11111100, 0b00100100, 0b00100100, 0b00011000, 0b00000000],
+          [0b00011000, 0b00100100, 0b00100100, 0b11111100, 0b00000000],
+          [0b01111100, 0b00001000, 0b00000100, 0b00000100, 0b00000000],
+          [0b01001000, 0b01010100, 0b01010100, 0b00100100, 0b00000000],
+          [0b00000100, 0b00111111, 0b01000100, 0b00000000],
+          [0b00111100, 0b01000000, 0b01000000, 0b01111100, 0b00000000],
+          [0b00011100, 0b00100000, 0b01000000, 0b00100000, 0b00011100, 0b00000000],
+          [0b00111100, 0b01000000, 0b00111100, 0b01000000, 0b00111100, 0b00000000],
+          [0b01000100, 0b00101000, 0b00010000, 0b00101000, 0b01000100, 0b00000000],
+          [0b10011100, 0b10100000, 0b10100000, 0b01111100, 0b00000000],
+          [0b01100100, 0b01010100, 0b01001100, 0b00000000],
+          [0b00001000, 0b00110110, 0b01000001, 0b00000000],
+          [0b01111111, 0b00000000],
+          [0b01000001, 0b00110110, 0b00001000, 0b00000000],
+          [0b00001000, 0b00000100, 0b00001000, 0b00000100, 0b00000000],
+          [0b00000010, 0b00000001, 0b00000010, 0b00000000]];
+        }
 
 
     /**
@@ -140,7 +159,7 @@ namespace Brickcell {
     */
     //% block="Setup MAX7219:|Number of matrixs $num|MOSI(DIN) = $mosi|SCK(CLK) = $sck|CS(LOAD) = $cs|MISO(not used) = $miso"
     //% num.min=1 num.defl=1 cs.defl=DigitalPin.P16 mosi.defl=DigitalPin.P15 miso.defl=DigitalPin.P14 sck.defl=DigitalPin.P13 rotate.defl=false group="1. Setup"
-    export function setup(num: number, mosi: DigitalPin, sck: DigitalPin, cs: DigitalPin, miso: DigitalPin) {
+    public setup(num: number, mosi: DigitalPin, sck: DigitalPin, cs: DigitalPin, miso: DigitalPin) {
         // set internal variables        
         _pinCS = cs
         _matrixNum = num
@@ -164,7 +183,7 @@ namespace Brickcell {
     * Rotation/reverse order options for 4-in-1 MAX7219 modules
     */
     //% block="Rotate matrix display $rotation|Reverse printing order $reversed" rotation.defl=rotation_direction.none group="1. Setup" blockExternalInputs=true advanced=true
-    export function for_4_in_1_modules(rotation: rotation_direction, reversed: boolean) {
+    public for_4_in_1_modules(rotation: rotation_direction, reversed: boolean) {
         _rotation = rotation
         _reversed = reversed
     }
@@ -172,7 +191,7 @@ namespace Brickcell {
     /**
     * (internal function) write command and data to all MAX7219s
     */
-    function _registerAll(addressCode: number, data: number) {
+    private _registerAll(addressCode: number, data: number) {
         pins.digitalWritePin(_pinCS, 0) // LOAD=LOW, start to receive commands
         for (let i = 0; i < _matrixNum; i++) {
             // when a MAX7219 received a new command/data set
@@ -186,7 +205,7 @@ namespace Brickcell {
     /**
     * (internal function) write command and data to a specific MAX7219 (index 0=farthest on the chain)
     */
-    function _registerForOne(addressCode: number, data: number, matrixIndex: number) {
+    private _registerForOne(addressCode: number, data: number, matrixIndex: number) {
         if (matrixIndex <= _matrixNum - 1) {
             pins.digitalWritePin(_pinCS, 0) // LOAD=LOW, start to receive commands
             for (let i = 0; i < _matrixNum; i++) {
@@ -207,7 +226,7 @@ namespace Brickcell {
     /**
     * (internal function) rotate matrix
     */
-    function _rotateMatrix(matrix: number[][]): number[][] {
+    private _rotateMatrix(matrix: number[][]): number[][] {
         let tmp = 0
         for (let i = 0; i < 4; i++) {
             for (let j = i; j < 7 - i; j++) {
@@ -237,7 +256,7 @@ namespace Brickcell {
     /**
     * (internal function) get 8x8 matrix from a column array
     */
-    function _getMatrixFromColumns(columns: number[]): number[][] {
+    private _getMatrixFromColumns(columns: number[]): number[][] {
         let matrix: number[][] = getEmptyMatrix()
         for (let i = 0; i < 8; i++) {
             for (let j = 7; j >= 0; j--) {
@@ -256,7 +275,7 @@ namespace Brickcell {
     * Scroll a text accross all MAX7219 matrixs for once
     */
     //% block="Scroll text $text|delay (ms) $delay|at the end wait (ms) $endDelay" text.defl="Hello world!" delay.min=0 delay.defl=75 endDelay.min=0 endDelay.defl=500 group="2. Display text on matrixs" blockExternalInputs=true
-    export function scrollText(text: string, delay: number, endDelay: number) {
+    public scrollText(text: string, delay: number, endDelay: number) {
         let printPosition = _displayArray.length - 8
         let characters_index: number[] = []
         let currentChrIndex = 0
@@ -322,7 +341,7 @@ namespace Brickcell {
     * Print a text accross the chain of MAX7219 matrixs at a specific spot. Offset value -8 ~ last column of matrixs. You can choose to clear the screen or not (if not it can be used to print multiple string on the MAX7219 chain).
     */
     //% block="Display text (align left) $text|offset $offset|clear screen first $clear" text.defl="Hi!" offset.min=-8 clear.defl=true group="2. Display text on matrixs" blockExternalInputs=true
-    export function displayText(text: string, offset: number, clear: boolean) {
+    public displayText(text: string, offset: number, clear: boolean) {
         // clear screen and array if needed
         if (clear) {
             for (let i = 0; i < _displayArray.length; i++) _displayArray[i] = 0
@@ -371,7 +390,7 @@ namespace Brickcell {
     * Print a text on the chain of MAX7219 matrixs and automatically align to the right.
     */
     //% block="Display text (align right) $text|clear screen first $clear" text.defl="Hi!" clear.defl=true group="2. Display text on matrixs" blockExternalInputs=true
-    export function displayTextAlignRight(text: string, clear: boolean) {
+    public displayTextAlignRight(text: string, clear: boolean) {
         let len = 0
         for (let i = 0; i < text.length; i++) {
             let index = font.indexOf(text.substr(i, 1))
@@ -384,7 +403,7 @@ namespace Brickcell {
     * Print a custom character from a number array on the chain of MAX7219 matrixs at a specific spot. Each number in the array is 0-255, the decimal version of column's byte number. Offset value -8 ~ last column of matrixs. You can choose to clear the screen or not (if not it can be used to print multiple string on the MAX7219 chain).
     */
     //% block="Display custom character from|number array $customCharArray|offset $offset|clear screen first $clear" offset.min=-8 clear.defl=true group="2. Display text on matrixs" blockExternalInputs=true advanced=true
-    export function displayCustomCharacter(customCharArray: number[], offset: number, clear: boolean) {
+    public displayCustomCharacter(customCharArray: number[], offset: number, clear: boolean) {
         // clear screen and array if needed
         if (clear) {
             for (let i = 0; i < _displayArray.length; i++) _displayArray[i] = 0
@@ -420,7 +439,7 @@ namespace Brickcell {
     * Return a number array calculated from a 8x8 LED byte array (example: B00100000,B01000000,B10000110,B10000000,B10000000,B10000110,B01000000,B00100000)
     */
     //% block="Get custom character number array|from byte-array string $text" text.defl="B00100000,B01000000,B10000110,B10000000,B10000000,B10000110,B01000000,B00100000" group="2. Display text on matrixs" blockExternalInputs=true advanced=true
-    export function getCustomCharacterArray(text: string) {
+    public getCustomCharacterArray(text: string) {
         let tempTextArray: string[] = []
         let resultNumberArray: number[] = []
         let currentIndex = 0
@@ -462,7 +481,7 @@ namespace Brickcell {
     //% blockExternalInputs=true
     //% group="2. Display text on matrixs"
     //% advanced=true
-    export function addCustomChr(chr: string, customCharArray: number[]) {
+    public addCustomChr(chr: string, customCharArray: number[]) {
         if (chr != null && chr.length == 1 && customCharArray != null) {
             // add new character
             font.push(chr)
@@ -474,7 +493,7 @@ namespace Brickcell {
     * Display all fonts in the extension font library
     */
     //% block="Display all fonts at delay $delay" delay.min=0 delay.defl=200 group="2. Display text on matrixs" advanced=true
-    export function fontDemo(delay: number) {
+    public fontDemo(delay: number) {
         let offsetIndex = 0
         clearAll()
         // print all characters on all matrixs
@@ -496,7 +515,7 @@ namespace Brickcell {
     * Turn on or off all MAX7219s
     */
     //% block="Turn on all matrixs $status" status.defl=true group="3. Basic light control" advanced=true
-    export function togglePower(status: boolean) {
+    public togglePower(status: boolean) {
         if (status) _registerAll(_SHUTDOWN, 1)
         else _registerAll(_SHUTDOWN, 0)
     }
@@ -505,7 +524,7 @@ namespace Brickcell {
     * Set brightness level of LEDs on all MAX7219s
     */
     //% block="Set all brightness level $level" level.min=0 level.max=15 level.defl=15 group="3. Basic light control"
-    export function brightnessAll(level: number) {
+    public brightnessAll(level: number) {
         _registerAll(_INTENSITY, level)
     }
 
@@ -513,7 +532,7 @@ namespace Brickcell {
     * Set brightness level of LEDs on a specific MAX7219s (index 0=farthest on the chain)
     */
     //% block="Set brightness level $level on matrix index = $index" level.min=0 level.max=15 level.defl=15 index.min=0 group="3. Basic light control" advanced=true
-    export function brightnessForOne(level: number, index: number) {
+    public brightnessForOne(level: number, index: number) {
         _registerForOne(_INTENSITY, level, index)
     }
 
@@ -521,7 +540,7 @@ namespace Brickcell {
     * Turn on all LEDs on all MAX7219s
     */
     //% block="Fill all LEDs" group="3. Basic light control"
-    export function fillAll() {
+    public fillAll() {
         for (let i = 0; i < 8; i++) _registerAll(_DIGIT[i], 255)
     }
 
@@ -529,7 +548,7 @@ namespace Brickcell {
     * Turn on LEDs on a specific MAX7219
     */
     //% block="Fill LEDs on matrix index = $index" index.min=0 group="3. Basic light control" advanced=true
-    export function fillForOne(index: number) {
+    public fillForOne(index: number) {
         for (let i = 0; i < 8; i++) _registerForOne(_DIGIT[i], 255, index)
     }
 
@@ -537,7 +556,7 @@ namespace Brickcell {
     * Turn off LEDs on all MAX7219s
     */
     //% block="Clear all LEDs" group="3. Basic light control"
-    export function clearAll() {
+    public clearAll() {
         for (let i = 0; i < 8; i++) _registerAll(_DIGIT[i], 0)
     }
 
@@ -545,7 +564,7 @@ namespace Brickcell {
     * Turn off LEDs on a specific MAX7219 (index 0=farthest on the chain)
     */
     //% block="Clear LEDs on matrix index = $index" index.min=0 group="3. Basic light control" advanced=true
-    export function clearForOne(index: number) {
+    public clearForOne(index: number) {
         for (let i = 0; i < 8; i++) _registerForOne(_DIGIT[i], 0, index)
     }
 
@@ -553,7 +572,7 @@ namespace Brickcell {
     * Turn on LEDs randomly on all MAX7219s
     */
     //% block="Randomize all LEDs" index.min=0 group="3. Basic light control"
-    export function randomizeAll() {
+    public randomizeAll() {
         for (let i = 0; i < 8; i++) _registerAll(_DIGIT[i], Math.randomRange(0, 255))
     }
 
@@ -561,7 +580,7 @@ namespace Brickcell {
     * Turn on LEDs randomly on a specific MAX7219 (index 0=farthest on the chain)
     */
     //% block="Randomize LEDs on matrix index = $index" index.min=0 group="3. Basic light control" advanced=true
-    export function randomizeForOne(index: number) {
+    public randomizeForOne(index: number) {
         for (let i = 0; i < 8; i++) _registerForOne(_DIGIT[i], Math.randomRange(0, 255), index)
     }
 
@@ -569,7 +588,7 @@ namespace Brickcell {
     * Set LEDs of all MAX7219s to a pattern from a 8x8 matrix variable (index 0=farthest on the chain)
     */
     //% block="Display 8x8 pattern $newMatrix on all matrixs" group="4. Set custom LED pattern on matrixs" advanced=true
-    export function displayLEDsToAll(newMatrix: number[][]) {
+    public displayLEDsToAll(newMatrix: number[][]) {
         let columnValue = 0
         if (newMatrix != null) {
             if (_rotation != rotation_direction.none) newMatrix = _rotateMatrix(newMatrix) // rotate matrix if needed
@@ -592,7 +611,7 @@ namespace Brickcell {
     * Set LEDs of a specific MAX7219s to a pattern from a 8x8 number matrix variable (index 0=farthest on the chain)
     */
     //% block="Display 8x8 pattern $newMatrix|on matrix index = $index" index.min=0 blockExternalInputs=true group="4. Set custom LED pattern on matrixs"
-    export function displayLEDsForOne(newMatrix: number[][], index: number) {
+    public displayLEDsForOne(newMatrix: number[][], index: number) {
         let columnValue = 0
         if (newMatrix != null) {
             if (_rotation != rotation_direction.none) newMatrix = _rotateMatrix(newMatrix) // rotate matrix if needed
@@ -615,7 +634,7 @@ namespace Brickcell {
     * Return a empty 8x8 number matrix variable
     */
     //% block="Empty 8x8 pattern" group="4. Set custom LED pattern on matrixs"
-    export function getEmptyMatrix() {
+    public getEmptyMatrix() {
         return [
             [0, 0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0],
@@ -632,7 +651,7 @@ namespace Brickcell {
     * Return a full 8x8 number matrix variable
     */
     //% block="Full 8x8 pattern" group="4. Set custom LED pattern on matrixs" advanced=true
-    export function getFullMatrix() {
+    public getFullMatrix() {
         return [
             [1, 1, 1, 1, 1, 1, 1, 1],
             [1, 1, 1, 1, 1, 1, 1, 1],
@@ -649,7 +668,7 @@ namespace Brickcell {
     * Return a specific value from a 8x8 number matrix variable
     */
     //% block="Get value from 8x8 pattern %matrix|x = $x y = $y" x.min=0 x.max=7 y.min=0 y.max=7 group="4. Set custom LED pattern on matrixs" blockExternalInputs=true advanced=true
-    export function getValueFromMatrix(matrix: number[][], x: number, y: number) {
+    public getValueFromMatrix(matrix: number[][], x: number, y: number) {
         return matrix[x][y]
     }
 
@@ -657,7 +676,7 @@ namespace Brickcell {
     * Set a specific value in a 8x8 number matrix variable
     */
     //% block="Set 8x8 pattern %matrix|x = $x y = $y value to $value" value.min=0 value.max=1 x.min=0 x.max=7 y.min=0 y.max=7 group="4. Set custom LED pattern on matrixs" blockExternalInputs=true
-    export function setValueInMatrix(matrix: number[][], x: number, y: number, value: number) {
+    public setValueInMatrix(matrix: number[][], x: number, y: number, value: number) {
         matrix[x][y] = value
     }
 
@@ -665,14 +684,24 @@ namespace Brickcell {
     * Toggle (between 0/1) a specific value in a 8x8 number matrix variable
     */
     //% block="Toogle value in 8x8 pattern %matrix|x = $x y = $y" x.min=0 x.max=7 y.min=0 y.max=7 group="4. Set custom LED pattern on matrixs" blockExternalInputs=true advanced=true
-    export function toogleValueInMatrix(matrix: number[][], x: number, y: number) {
+    public toogleValueInMatrix(matrix: number[][], x: number, y: number) {
         if (matrix[x][y] == 1) matrix[x][y] = 0
         else if (matrix[x][y] == 0) matrix[x][y] = 1
     }
 
+  }
 
-
-
+    /**
+     * create a MAX7219 object.
+     */
+    //% blockId="MAX7219_create"
+    //% block="Create Dot Matrix Display"
+    //% subcategory="dotmatrix_max7219"
+    export function create(): MAX7219 {
+        let max7219 = new MAX7219();
+        //oled.initOLED(addr);
+        return max7219;
+    }
 
 }
 
