@@ -410,8 +410,8 @@ namespace Brickcell {
     */
     //% block="%max7219 Display custom character from|number array $customCharArray|offset $offset|clear screen first $clear" offset.min=-8 clear.defl=true
     //% blockId="MAX7219_displayCustomCharacter"
-    //% group="2. Display text on matrix" blockExternalInputs=true advanced=true
-    //% subcategory="dotmatrix_max7219"
+    //% group="2. Display text on matrix" blockExternalInputs=true
+    //% subcategory="more dotmatrix_max7219"
     public displayCustomCharacter(customCharArray: number[], offset: number, clear: boolean) {
         // clear screen and array if needed
         if (clear) {
@@ -449,8 +449,8 @@ namespace Brickcell {
     */
     //% block="%max7219 Get custom character number array|from byte-array string $text" text.defl="B00100000,B01000000,B10000110,B10000000,B10000000,B10000110,B01000000,B00100000"
     //% blockId="MAX7219_getCustomCharacterArray"
-    //% group="2. Display text on matrix" blockExternalInputs=true advanced=true
-    //% subcategory="dotmatrix_max7219"
+    //% group="2. Display text on matrix" blockExternalInputs=true
+    //% subcategory="more dotmatrix_max7219"
     public getCustomCharacterArray(text: string) {
         let tempTextArray: string[] = []
         let resultNumberArray: number[] = []
@@ -493,8 +493,7 @@ namespace Brickcell {
     //% chr.defl=""
     //% blockExternalInputs=true
     //% group="2. Display text on matrix"
-    //% advanced=true
-    //% subcategory="dotmatrix_max7219"
+    //% subcategory="more dotmatrix_max7219"
     public addCustomChr(chr: string, customCharArray: number[]) {
         if (chr != null && chr.length == 1 && customCharArray != null) {
             // add new character
@@ -508,8 +507,8 @@ namespace Brickcell {
     */
     //% block="%max7219 Display all fonts at delay $delay" delay.min=0 delay.defl=200
     //% blockId="MAX7219_fontDemo"
-    //% group="2. Display text on matrix" advanced=true
-    //% subcategory="dotmatrix_max7219"
+    //% group="2. Display text on matrix"
+    //% subcategory="more dotmatrix_max7219"
     public fontDemo(delay: number) {
         let offsetIndex = 0
         this.clearAll()
@@ -533,8 +532,8 @@ namespace Brickcell {
     */
     //% block="%max7219 Turn on all matrix $status" status.defl=true
     //% blockId="MAX7219_togglePower"
-    //% group="3. Basic light control" advanced=true
-    //% subcategory="dotmatrix_max7219"
+    //% group="3. Basic light control"
+    //% subcategory="more dotmatrix_max7219"
     public togglePower(status: boolean) {
         if (status) this._registerAll(this._SHUTDOWN, 1)
         else this._registerAll(this._SHUTDOWN, 0)
@@ -556,8 +555,8 @@ namespace Brickcell {
     */
     //% block="%max7219 Set brightness level $level on matrix index = $index" level.min=0 level.max=15 level.defl=15 index.min=0
     //% blockId="MAX7219_brightnessForOne"
-    //% group="3. Basic light control" advanced=true
-    //% subcategory="dotmatrix_max7219"
+    //% group="3. Basic light control"
+    //% subcategory="more dotmatrix_max7219"
     public brightnessForOne(level: number, index: number) {
         this._registerForOne(this._INTENSITY, level, index)
     }
@@ -578,8 +577,8 @@ namespace Brickcell {
     */
     //% block="%max7219 Fill LEDs on matrix index = $index" index.min=0
     //% blockId="MAX7219_fillForOne"
-    //% group="3. Basic light control" advanced=true
-    //% subcategory="dotmatrix_max7219"
+    //% group="3. Basic light control"
+    //% subcategory="more dotmatrix_max7219"
     public fillForOne(index: number) {
         for (let i = 0; i < 8; i++) this._registerForOne(this._DIGIT[i], 255, index)
     }
@@ -600,8 +599,8 @@ namespace Brickcell {
     */
     //% block="%max7219 Clear LEDs on matrix index = $index" index.min=0
     //% blockId="MAX7219_clearForOne"
-    //% group="3. Basic light control" advanced=true
-    //% subcategory="dotmatrix_max7219"
+    //% group="3. Basic light control"
+    //% subcategory="more dotmatrix_max7219"
     public clearForOne(index: number) {
         for (let i = 0; i < 8; i++) this._registerForOne(this._DIGIT[i], 0, index)
     }
@@ -622,8 +621,8 @@ namespace Brickcell {
     */
     //% block="%max7219 Randomize LEDs on matrix index = $index" index.min=0
     //% blockId="MAX7219_randomizeForOne"
-    //% group="3. Basic light control" advanced=true
-    //% subcategory="dotmatrix_max7219"
+    //% group="3. Basic light control"
+    //% subcategory="more dotmatrix_max7219"
     public randomizeForOne(index: number) {
         for (let i = 0; i < 8; i++) this._registerForOne(this._DIGIT[i], Math.randomRange(0, 255), index)
     }
@@ -633,8 +632,8 @@ namespace Brickcell {
     */
     //% block="%max7219 Display 8x8 pattern $newMatrix on all matrix"
     //% blockId="MAX7219_displayLEDsToAll"
-    //% group="4. Set custom LED pattern on matrix" advanced=true
-    //% subcategory="dotmatrix_max7219"
+    //% group="4. Set custom LED pattern on matrix"
+    //% subcategory="more dotmatrix_max7219"
     public displayLEDsToAll(newMatrix: number[][]) {
         let columnValue = 0
         if (newMatrix != null) {
@@ -705,8 +704,8 @@ namespace Brickcell {
     */
     //% block="%max7219 Full 8x8 pattern"
     //% blockId="MAX7219_getFullMatrix"
-    //% group="4. Set custom LED pattern on matrix" advanced=true
-    //% subcategory="dotmatrix_max7219"
+    //% group="4. Set custom LED pattern on matrix"
+    //% subcategory="more dotmatrix_max7219"
     public getFullMatrix() {
         return [
             [1, 1, 1, 1, 1, 1, 1, 1],
@@ -725,8 +724,8 @@ namespace Brickcell {
     */
     //% block="%max7219 Get value from 8x8 pattern %matrix|x = $x y = $y" x.min=0 x.max=7 y.min=0 y.max=7
     //% blockId="MAX7219_getValueFromMatrix"
-    //% group="4. Set custom LED pattern on matrix" blockExternalInputs=true advanced=true
-    //% subcategory="dotmatrix_max7219"
+    //% group="4. Set custom LED pattern on matrix" blockExternalInputs=true
+    //% subcategory="more dotmatrix_max7219"
     public getValueFromMatrix(matrix: number[][], x: number, y: number) {
         return matrix[x][y]
     }
@@ -747,8 +746,8 @@ namespace Brickcell {
     */
     //% block="%max7219 Toogle value in 8x8 pattern %matrix|x = $x y = $y" x.min=0 x.max=7 y.min=0 y.max=7
     //% blockId="MAX7219_toggleValueInMatrix"
-    //% group="4. Set custom LED pattern on matrix" blockExternalInputs=true advanced=true
-    //% subcategory="dotmatrix_max7219"
+    //% group="4. Set custom LED pattern on matrix" blockExternalInputs=true
+    //% subcategory="more dotmatrix_max7219"
     public toogleValueInMatrix(matrix: number[][], x: number, y: number) {
         if (matrix[x][y] == 1) matrix[x][y] = 0
         else if (matrix[x][y] == 0) matrix[x][y] = 1
