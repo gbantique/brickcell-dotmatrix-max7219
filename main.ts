@@ -4,16 +4,14 @@ max7219.setup(
 DigitalPin.P15,
 DigitalPin.P14,
 DigitalPin.P13,
-DigitalPin.P16
-)
-max7219.for_4_in_1_modules(
-rotation_direction.clockwise,
-false
+DigitalPin.P16,
+max7219_rotation_direction.clockwise,
+true
 )
 basic.forever(function () {
     max7219.scrollText(
-    "Hello world!",
-    75,
-    500
+    "Brickcell 8x8 Dot Matrix Display",
+    150,
+    300
     )
 })
