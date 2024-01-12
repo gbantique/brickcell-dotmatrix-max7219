@@ -1,27 +1,19 @@
-let dotmatrix8x8 = Brickcell.create()
-dotmatrix8x8.setup(
-dotmatrix8x8,
-DigitalPin.P16,
+let max7219 = Brickcell.create()
+max7219.setup(
+1,
 DigitalPin.P15,
 DigitalPin.P14,
-DigitalPin.P13
+DigitalPin.P13,
+DigitalPin.P16
+)
+max7219.for_4_in_1_modules(
+rotation_direction.clockwise,
+false
 )
 basic.forever(function () {
-    dotmatrix8x8.scrollText(
-    dotmatrix8x8,
-    50,
-    50
+    max7219.scrollText(
+    "Hello world!",
+    75,
+    500
     )
-    for (let index = 0; index <= 23; index++) {
-        dotmatrix8x8.getCustomCharacterArray(
-        dotmatrix8x8
-        ).displayCustomCharacter(
-        dotmatrix8x8.getCustomCharacterArray(
-        dotmatrix8x8
-        ),
-        index,
-        true
-        )
-        basic.pause(50)
-    }
 })
