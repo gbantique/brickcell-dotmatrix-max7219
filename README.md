@@ -22,3 +22,7 @@ To edit this repository in MakeCode.
 
 * for PXT/microbit
 <script src="https://makecode.com/gh-pages-embed.js"></script><script>makeCodeRender("{{ site.makecode.home_url }}", "{{ site.github.owner_name }}/{{ site.github.repository_name }}");</script>
+
+## Credit
+I would like to express my appreciation to the original author of this extension for sharing it to the public
+[https://github.com/alankrantas/pxt-MAX7219_8x8/](https://github.com/alankrantas/pxt-MAX7219_8x8.git/)
