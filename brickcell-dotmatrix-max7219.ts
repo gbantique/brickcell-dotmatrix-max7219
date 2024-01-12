@@ -20,7 +20,7 @@ namespace Brickcell {
     private _SHUTDOWN: number;    // turn on (1) or off (0)
     private _DISPLAYTEST: number; // force all LEDs light up, no usage here
 
-    private _pinCS = DigitalPin;      // LOAD pin, 0=ready to receive command, 1=command take effect
+    private _pinCS: DigitalPin;      // LOAD pin, 0=ready to receive command, 1=command take effect
     private _matrixNum: number;       // number of MAX7219 matrix linked in the chain
     private _displayArray: number[];  // display array to show accross all matrixs
     private _rotation: number;        // rotate matrixs display for 4-in-1 modules
@@ -41,7 +41,7 @@ namespace Brickcell {
 
       this._pinCS = DigitalPin.P16;
       this._matrixNum = 1;
-      this._displayArray: number[] = [];
+      this._displayArray = [];
       this._rotation = 0;
       this._reversed = false;
 
@@ -161,22 +161,22 @@ namespace Brickcell {
     //% num.min=1 num.defl=1 cs.defl=DigitalPin.P16 mosi.defl=DigitalPin.P15 miso.defl=DigitalPin.P14 sck.defl=DigitalPin.P13 rotate.defl=false group="1. Setup"
     public setup(num: number, mosi: DigitalPin, sck: DigitalPin, cs: DigitalPin, miso: DigitalPin) {
         // set internal variables        
-        _pinCS = cs
-        _matrixNum = num
+        this._pinCS = cs
+        this._matrixNum = num
         // prepare display array (for displaying texts; add extra 8 columns at each side as buffers)
-        for (let i = 0; i < (num + 2) * 8; i++)  _displayArray.push(0)
+        for (let i = 0; i < (num + 2) * 8; i++)  this._displayArray.push(0)
         // set micro:bit SPI
         pins.spiPins(mosi, miso, sck)
         pins.spiFormat(8, 3)
         pins.spiFrequency(1000000)
         // initialize MAX7219s
-        _registerAll(_SHUTDOWN, 0) // turn off
-        _registerAll(_DISPLAYTEST, 0) // test mode off
-        _registerAll(_DECODEMODE, 0) // decode mode off
-        _registerAll(_SCANLIMIT, 7) // set scan limit to 7 (column 0-7)
-        _registerAll(_INTENSITY, 15) // set brightness to 15
-        _registerAll(_SHUTDOWN, 1) // turn on
-        clearAll() // clear screen on all MAX7219s
+        this._registerAll(this._SHUTDOWN, 0) // turn off
+        this._registerAll(this._DISPLAYTEST, 0) // test mode off
+        this._registerAll(this._DECODEMODE, 0) // decode mode off
+        this._registerAll(this._SCANLIMIT, 7) // set scan limit to 7 (column 0-7)
+        this._registerAll(this._INTENSITY, 15) // set brightness to 15
+        this._registerAll(this._SHUTDOWN, 1) // turn on
+        this.clearAll() // clear screen on all MAX7219s
     }
 
     /**
@@ -184,42 +184,42 @@ namespace Brickcell {
     */
     //% block="Rotate matrix display $rotation|Reverse printing order $reversed" rotation.defl=rotation_direction.none group="1. Setup" blockExternalInputs=true advanced=true
     public for_4_in_1_modules(rotation: rotation_direction, reversed: boolean) {
-        _rotation = rotation
-        _reversed = reversed
+        this._rotation = rotation
+        this._reversed = reversed
     }
 
     /**
     * (internal function) write command and data to all MAX7219s
     */
     private _registerAll(addressCode: number, data: number) {
-        pins.digitalWritePin(_pinCS, 0) // LOAD=LOW, start to receive commands
-        for (let i = 0; i < _matrixNum; i++) {
+        pins.digitalWritePin(this._pinCS, 0) // LOAD=LOW, start to receive commands
+        for (let i = 0; i < this._matrixNum; i++) {
             // when a MAX7219 received a new command/data set
             // the previous one would be pushed to the next matrix along the chain via DOUT
             pins.spiWrite(addressCode) // command (8 bits)
             pins.spiWrite(data) //data (8 bits)
         }
-        pins.digitalWritePin(_pinCS, 1) // LOAD=HIGH, commands take effect
+        pins.digitalWritePin(this._pinCS, 1) // LOAD=HIGH, commands take effect
     }
 
     /**
     * (internal function) write command and data to a specific MAX7219 (index 0=farthest on the chain)
     */
     private _registerForOne(addressCode: number, data: number, matrixIndex: number) {
-        if (matrixIndex <= _matrixNum - 1) {
-            pins.digitalWritePin(_pinCS, 0) // LOAD=LOW, start to receive commands
-            for (let i = 0; i < _matrixNum; i++) {
+        if (matrixIndex <= this._matrixNum - 1) {
+            pins.digitalWritePin(this._pinCS, 0) // LOAD=LOW, start to receive commands
+            for (let i = 0; i < this._matrixNum; i++) {
                 // when a MAX7219 received a new command/data set
                 // the previous one would be pushed to the next matrix along the chain via DOUT
                 if (i == matrixIndex) { // send change to target
                     pins.spiWrite(addressCode) // command (8 bits)
                     pins.spiWrite(data) //data (8 bits)
                 } else { // do nothing to non-targets
-                    pins.spiWrite(_NOOP)
+                    pins.spiWrite(this._NOOP)
                     pins.spiWrite(0)
                 }
             }
-            pins.digitalWritePin(_pinCS, 1) // LOAD=HIGH, commands take effect
+            pins.digitalWritePin(this._pinCS, 1) // LOAD=HIGH, commands take effect
         }
     }
 
@@ -231,17 +231,17 @@ namespace Brickcell {
         for (let i = 0; i < 4; i++) {
             for (let j = i; j < 7 - i; j++) {
                 tmp = matrix[i][j]
-                if (_rotation == rotation_direction.clockwise) { // clockwise
+                if (this._rotation == rotation_direction.clockwise) { // clockwise
                     matrix[i][j] = matrix[j][7 - i]
                     matrix[j][7 - i] = matrix[7 - i][7 - j]
                     matrix[7 - i][7 - j] = matrix[7 - j][i]
                     matrix[7 - j][i] = tmp
-                } else if (_rotation == rotation_direction.counterclockwise) { // counter-clockwise
+                } else if (this._rotation == rotation_direction.counterclockwise) { // counter-clockwise
                     matrix[i][j] = matrix[7 - j][i]
                     matrix[7 - j][i] = matrix[7 - i][7 - j]
                     matrix[7 - i][7 - j] = matrix[j][7 - i]
                     matrix[j][7 - i] = tmp
-                } else if (_rotation == rotation_direction.one_eighty_degree) { // 180 degree
+                } else if (this._rotation == rotation_direction.one_eighty_degree) { // 180 degree
                     matrix[i][j] = matrix[7 - i][7 - j]
                     matrix[7 - i][7 - j] = tmp
                     tmp = matrix[7 - j][i]
@@ -257,7 +257,7 @@ namespace Brickcell {
     * (internal function) get 8x8 matrix from a column array
     */
     private _getMatrixFromColumns(columns: number[]): number[][] {
-        let matrix: number[][] = getEmptyMatrix()
+        let matrix: number[][] = this.getEmptyMatrix()
         for (let i = 0; i < 8; i++) {
             for (let j = 7; j >= 0; j--) {
                 if (columns[i] >= 2 ** j) {
@@ -276,7 +276,7 @@ namespace Brickcell {
     */
     //% block="Scroll text $text|delay (ms) $delay|at the end wait (ms) $endDelay" text.defl="Hello world!" delay.min=0 delay.defl=75 endDelay.min=0 endDelay.defl=500 group="2. Display text on matrixs" blockExternalInputs=true
     public scrollText(text: string, delay: number, endDelay: number) {
-        let printPosition = _displayArray.length - 8
+        let printPosition = this._displayArray.length - 8
         let characters_index: number[] = []
         let currentChrIndex = 0
         let currentFontArray: number[] = []
@@ -284,51 +284,51 @@ namespace Brickcell {
         let chrCountdown: number[] = []
         let totalScrollTime = 0
         // clear screen and array
-        for (let i = 0; i < _displayArray.length; i++) _displayArray[i] = 0
-        clearAll()
+        for (let i = 0; i < this._displayArray.length; i++) this._displayArray[i] = 0
+        this.clearAll()
         // get font index of every characters and total scroll time needed
         for (let i = 0; i < text.length; i++) {
-            let index = font.indexOf(text.substr(i, 1))
+            let index = this.font.indexOf(text.substr(i, 1))
             if (index >= 0) {
                 characters_index.push(index)
-                chrCountdown.push(font_matrix[index].length)
-                totalScrollTime += font_matrix[index].length
+                chrCountdown.push(this.font_matrix[index].length)
+                totalScrollTime += this.font_matrix[index].length
             }
         }
-        totalScrollTime += _matrixNum * 8
+        totalScrollTime += this._matrixNum * 8
         // print characters into array and scroll the array
         for (let i = 0; i < totalScrollTime; i++) {
             nextChrCountdown -= 1
             if (currentChrIndex < characters_index.length && nextChrCountdown == 0) {
                 // print a character just "outside" visible area
-                currentFontArray = font_matrix[characters_index[currentChrIndex]]
+                currentFontArray = this.font_matrix[characters_index[currentChrIndex]]
                 if (currentFontArray != null)
                     for (let j = 0; j < currentFontArray.length; j++)
-                        _displayArray[printPosition + j] = currentFontArray[j]
+                        this._displayArray[printPosition + j] = currentFontArray[j]
                 // wait until current character scrolled into visible area
                 nextChrCountdown = chrCountdown[currentChrIndex]
                 currentChrIndex += 1
             }
             // scroll array (copy all columns to the one before it)
-            for (let j = 0; j < _displayArray.length - 1; j++) {
-                _displayArray[j] = _displayArray[j + 1]
+            for (let j = 0; j < this._displayArray.length - 1; j++) {
+                this._displayArray[j] = this._displayArray[j + 1]
             }
-            _displayArray[_displayArray.length - 1] = 0
+            this._displayArray[this._displayArray.length - 1] = 0
             // write every 8 columns of display array (visible area) to each MAX7219s
-            let matrixCountdown = _matrixNum - 1
+            let matrixCountdown = this._matrixNum - 1
             let actualMatrixIndex = 0
-            for (let j = 8; j < _displayArray.length - 8; j += 8) {
+            for (let j = 8; j < this._displayArray.length - 8; j += 8) {
                 if (matrixCountdown < 0) break
-                if (!_reversed) actualMatrixIndex = matrixCountdown
-                else actualMatrixIndex = _matrixNum - 1 - matrixCountdown
-                if (_rotation == rotation_direction.none) {
+                if (!this._reversed) actualMatrixIndex = matrixCountdown
+                else actualMatrixIndex = this._matrixNum - 1 - matrixCountdown
+                if (this._rotation == rotation_direction.none) {
                     for (let k = j; k < j + 8; k++)
-                        _registerForOne(_DIGIT[k - j], _displayArray[k], actualMatrixIndex)
+                        this._registerForOne(this._DIGIT[k - j], this._displayArray[k], actualMatrixIndex)
                 } else { // rotate matrix if needed
                     let tmpColumns = [0, 0, 0, 0, 0, 0, 0, 0]
                     let l = 0
-                    for (let k = j; k < j + 8; k++) tmpColumns[l++] = _displayArray[k]
-                    displayLEDsForOne(_getMatrixFromColumns(tmpColumns), actualMatrixIndex)
+                    for (let k = j; k < j + 8; k++) tmpColumns[l++] = this._displayArray[k]
+                    this.displayLEDsForOne(this._getMatrixFromColumns(tmpColumns), actualMatrixIndex)
                 }
                 matrixCountdown--
             }
@@ -344,43 +344,43 @@ namespace Brickcell {
     public displayText(text: string, offset: number, clear: boolean) {
         // clear screen and array if needed
         if (clear) {
-            for (let i = 0; i < _displayArray.length; i++) _displayArray[i] = 0
-            clearAll()
+            for (let i = 0; i < this._displayArray.length; i++) this._displayArray[i] = 0
+            this.clearAll()
         }
-        let printPosition = Math.constrain(offset, -8, _displayArray.length - 9) + 8
+        let printPosition = Math.constrain(offset, -8, this._displayArray.length - 9) + 8
         let currentPosition = printPosition
         let characters_index: number[] = []
         let currentChrIndex = 0
         let currentFontArray: number[] = []
         // get font index of every characters
         for (let i = 0; i < text.length; i++) {
-            let index = font.indexOf(text.substr(i, 1))
+            let index = this.font.indexOf(text.substr(i, 1))
             if (index >= 0) characters_index.push(index)
         }
         // print characters into array from offset position
-        while (currentPosition < _displayArray.length - 8) {
-            currentFontArray = font_matrix[characters_index[currentChrIndex]]
+        while (currentPosition < this._displayArray.length - 8) {
+            currentFontArray = this.font_matrix[characters_index[currentChrIndex]]
             if (currentFontArray != null)
                 for (let j = 0; j < currentFontArray.length; j++)
-                    _displayArray[printPosition++] = currentFontArray[j]
+                    this._displayArray[printPosition++] = currentFontArray[j]
             currentChrIndex += 1
             if (currentChrIndex == characters_index.length) break
         }
         // write every 8 columns of display array (visible area) to each MAX7219s
-        let matrixCountdown = _matrixNum - 1
+        let matrixCountdown = this._matrixNum - 1
         let actualMatrixIndex = 0
-        for (let i = 8; i < _displayArray.length - 8; i += 8) {
+        for (let i = 8; i < this._displayArray.length - 8; i += 8) {
             if (matrixCountdown < 0) break
-            if (!_reversed) actualMatrixIndex = matrixCountdown
-            else actualMatrixIndex = _matrixNum - 1 - matrixCountdown
-            if (_rotation == rotation_direction.none) {
+            if (!this._reversed) actualMatrixIndex = matrixCountdown
+            else actualMatrixIndex = this._matrixNum - 1 - matrixCountdown
+            if (this._rotation == rotation_direction.none) {
                 for (let j = i; j < i + 8; j++)
-                    _registerForOne(_DIGIT[j - i], _displayArray[j], actualMatrixIndex)
+                    this._registerForOne(this._DIGIT[j - i], this._displayArray[j], actualMatrixIndex)
             } else { // rotate matrix and reverse order if needed
                 let tmpColumns = [0, 0, 0, 0, 0, 0, 0, 0]
                 let l = 0
-                for (let j = i; j < i + 8; j++)  tmpColumns[l++] = _displayArray[j]
-                displayLEDsForOne(_getMatrixFromColumns(tmpColumns), actualMatrixIndex)
+                for (let j = i; j < i + 8; j++)  tmpColumns[l++] = this._displayArray[j]
+                this.displayLEDsForOne(this._getMatrixFromColumns(tmpColumns), actualMatrixIndex)
             }
             matrixCountdown--
         }
@@ -393,10 +393,10 @@ namespace Brickcell {
     public displayTextAlignRight(text: string, clear: boolean) {
         let len = 0
         for (let i = 0; i < text.length; i++) {
-            let index = font.indexOf(text.substr(i, 1))
-            if (index >= 0) len += font_matrix[index].length
+            let index = this.font.indexOf(text.substr(i, 1))
+            if (index >= 0) len += this.font_matrix[index].length
         }
-        displayText(text, _matrixNum * 8 - len, clear)
+        this.displayText(text, this._matrixNum * 8 - len, clear)
     }
 
     /**
@@ -406,29 +406,29 @@ namespace Brickcell {
     public displayCustomCharacter(customCharArray: number[], offset: number, clear: boolean) {
         // clear screen and array if needed
         if (clear) {
-            for (let i = 0; i < _displayArray.length; i++) _displayArray[i] = 0
-            clearAll()
+            for (let i = 0; i < this._displayArray.length; i++) this._displayArray[i] = 0
+            this.clearAll()
         }
-        let printPosition: number = Math.constrain(offset, -8, _displayArray.length - 9) + 8
+        let printPosition: number = Math.constrain(offset, -8, this._displayArray.length - 9) + 8
         if (customCharArray != null) {
             // print column data to display array
             for (let i = 0; i < customCharArray.length; i++)
-                _displayArray[printPosition + i] = customCharArray[i]
+                this._displayArray[printPosition + i] = customCharArray[i]
             // write every 8 columns of display array (visible area) to each MAX7219s
-            let matrixCountdown = _matrixNum - 1
+            let matrixCountdown = this._matrixNum - 1
             let actualMatrixIndex = 0
-            for (let i = 8; i < _displayArray.length - 8; i += 8) {
+            for (let i = 8; i < this._displayArray.length - 8; i += 8) {
                 if (matrixCountdown < 0) break
-                if (!_reversed) actualMatrixIndex = matrixCountdown
-                else actualMatrixIndex = _matrixNum - 1 - matrixCountdown
-                if (_rotation == rotation_direction.none) {
+                if (!this._reversed) actualMatrixIndex = matrixCountdown
+                else actualMatrixIndex = this._matrixNum - 1 - matrixCountdown
+                if (this._rotation == rotation_direction.none) {
                     for (let j = i; j < i + 8; j++)
-                        _registerForOne(_DIGIT[j - i], _displayArray[j], actualMatrixIndex)
+                        this._registerForOne(this._DIGIT[j - i], this._displayArray[j], actualMatrixIndex)
                 } else { // rotate matrix and reverse order if needed
                     let tmpColumns = [0, 0, 0, 0, 0, 0, 0, 0]
                     let l = 0
-                    for (let j = i; j < i + 8; j++) tmpColumns[l++] = _displayArray[j]
-                    displayLEDsForOne(_getMatrixFromColumns(tmpColumns), actualMatrixIndex)
+                    for (let j = i; j < i + 8; j++) tmpColumns[l++] = this._displayArray[j]
+                    this.displayLEDsForOne(this._getMatrixFromColumns(tmpColumns), actualMatrixIndex)
                 }
                 matrixCountdown--
             }
@@ -484,8 +484,8 @@ namespace Brickcell {
     public addCustomChr(chr: string, customCharArray: number[]) {
         if (chr != null && chr.length == 1 && customCharArray != null) {
             // add new character
-            font.push(chr)
-            font_matrix.push(customCharArray)
+            this.font.push(chr)
+            this.font_matrix.push(customCharArray)
         }
     }
 
@@ -495,20 +495,20 @@ namespace Brickcell {
     //% block="Display all fonts at delay $delay" delay.min=0 delay.defl=200 group="2. Display text on matrixs" advanced=true
     public fontDemo(delay: number) {
         let offsetIndex = 0
-        clearAll()
+        this.clearAll()
         // print all characters on all matrixs
-        for (let i = 1; i < font_matrix.length; i++) {
+        for (let i = 1; i < this.font_matrix.length; i++) {
             // print two blank spaces to "reset" a matrix
-            displayCustomCharacter(font_matrix[0], offsetIndex * 8, false)
-            displayCustomCharacter(font_matrix[0], offsetIndex * 8 + 4, false)
+            this.displayCustomCharacter(this.font_matrix[0], offsetIndex * 8, false)
+            this.displayCustomCharacter(this.font_matrix[0], offsetIndex * 8 + 4, false)
             // print a character
-            displayCustomCharacter(font_matrix[i], offsetIndex * 8, false)
-            if (offsetIndex == _matrixNum - 1) offsetIndex = 0
+            this.displayCustomCharacter(this.font_matrix[i], offsetIndex * 8, false)
+            if (offsetIndex == this._matrixNum - 1) offsetIndex = 0
             else offsetIndex += 1
             basic.pause(delay)
         }
         basic.pause(delay)
-        clearAll()
+        this.clearAll()
     }
 
     /**
@@ -516,8 +516,8 @@ namespace Brickcell {
     */
     //% block="Turn on all matrixs $status" status.defl=true group="3. Basic light control" advanced=true
     public togglePower(status: boolean) {
-        if (status) _registerAll(_SHUTDOWN, 1)
-        else _registerAll(_SHUTDOWN, 0)
+        if (status) this._registerAll(this._SHUTDOWN, 1)
+        else this._registerAll(this._SHUTDOWN, 0)
     }
 
     /**
@@ -525,7 +525,7 @@ namespace Brickcell {
     */
     //% block="Set all brightness level $level" level.min=0 level.max=15 level.defl=15 group="3. Basic light control"
     public brightnessAll(level: number) {
-        _registerAll(_INTENSITY, level)
+        this._registerAll(this._INTENSITY, level)
     }
 
     /**
@@ -533,7 +533,7 @@ namespace Brickcell {
     */
     //% block="Set brightness level $level on matrix index = $index" level.min=0 level.max=15 level.defl=15 index.min=0 group="3. Basic light control" advanced=true
     public brightnessForOne(level: number, index: number) {
-        _registerForOne(_INTENSITY, level, index)
+        this._registerForOne(this._INTENSITY, level, index)
     }
 
     /**
@@ -541,7 +541,7 @@ namespace Brickcell {
     */
     //% block="Fill all LEDs" group="3. Basic light control"
     public fillAll() {
-        for (let i = 0; i < 8; i++) _registerAll(_DIGIT[i], 255)
+        for (let i = 0; i < 8; i++) this._registerAll(this._DIGIT[i], 255)
     }
 
     /**
@@ -549,7 +549,7 @@ namespace Brickcell {
     */
     //% block="Fill LEDs on matrix index = $index" index.min=0 group="3. Basic light control" advanced=true
     public fillForOne(index: number) {
-        for (let i = 0; i < 8; i++) _registerForOne(_DIGIT[i], 255, index)
+        for (let i = 0; i < 8; i++) this._registerForOne(this._DIGIT[i], 255, index)
     }
 
     /**
@@ -557,7 +557,7 @@ namespace Brickcell {
     */
     //% block="Clear all LEDs" group="3. Basic light control"
     public clearAll() {
-        for (let i = 0; i < 8; i++) _registerAll(_DIGIT[i], 0)
+        for (let i = 0; i < 8; i++) this._registerAll(this._DIGIT[i], 0)
     }
 
     /**
@@ -565,7 +565,7 @@ namespace Brickcell {
     */
     //% block="Clear LEDs on matrix index = $index" index.min=0 group="3. Basic light control" advanced=true
     public clearForOne(index: number) {
-        for (let i = 0; i < 8; i++) _registerForOne(_DIGIT[i], 0, index)
+        for (let i = 0; i < 8; i++) this._registerForOne(this._DIGIT[i], 0, index)
     }
 
     /**
@@ -573,7 +573,7 @@ namespace Brickcell {
     */
     //% block="Randomize all LEDs" index.min=0 group="3. Basic light control"
     public randomizeAll() {
-        for (let i = 0; i < 8; i++) _registerAll(_DIGIT[i], Math.randomRange(0, 255))
+        for (let i = 0; i < 8; i++) this._registerAll(this._DIGIT[i], Math.randomRange(0, 255))
     }
 
     /**
@@ -581,7 +581,7 @@ namespace Brickcell {
     */
     //% block="Randomize LEDs on matrix index = $index" index.min=0 group="3. Basic light control" advanced=true
     public randomizeForOne(index: number) {
-        for (let i = 0; i < 8; i++) _registerForOne(_DIGIT[i], Math.randomRange(0, 255), index)
+        for (let i = 0; i < 8; i++) this._registerForOne(this._DIGIT[i], Math.randomRange(0, 255), index)
     }
 
     /**
@@ -591,7 +591,7 @@ namespace Brickcell {
     public displayLEDsToAll(newMatrix: number[][]) {
         let columnValue = 0
         if (newMatrix != null) {
-            if (_rotation != rotation_direction.none) newMatrix = _rotateMatrix(newMatrix) // rotate matrix if needed
+            if (this._rotation != rotation_direction.none) newMatrix = this._rotateMatrix(newMatrix) // rotate matrix if needed
             for (let i = 0; i < 8; i++) {
                 if (newMatrix[i] != null) {
                     columnValue = 0
@@ -601,7 +601,7 @@ namespace Brickcell {
                             columnValue += 2 ** j
                         }
                     }
-                    _registerAll(_DIGIT[i], columnValue)
+                    this._registerAll(this._DIGIT[i], columnValue)
                 }
             }
         }
@@ -614,7 +614,7 @@ namespace Brickcell {
     public displayLEDsForOne(newMatrix: number[][], index: number) {
         let columnValue = 0
         if (newMatrix != null) {
-            if (_rotation != rotation_direction.none) newMatrix = _rotateMatrix(newMatrix) // rotate matrix if needed
+            if (this._rotation != rotation_direction.none) newMatrix = this._rotateMatrix(newMatrix) // rotate matrix if needed
             for (let i = 0; i < 8; i++) {
                 if (newMatrix[i] != null) {
                     columnValue = 0
@@ -624,7 +624,7 @@ namespace Brickcell {
                             columnValue += 2 ** j
                         }
                     }
-                    _registerForOne(_DIGIT[i], columnValue, index)
+                    this._registerForOne(this._DIGIT[i], columnValue, index)
                 }
             }
         }
